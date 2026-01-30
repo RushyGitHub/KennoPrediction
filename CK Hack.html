@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turbo Engine Overlay</title>
+
+<style>
+:root{
+  --neon-blue:#1f6feb;
+  --neon-blue-glow:rgba(31,111,235,.6);
+
+  --big:#f7c843;
+  --big-glow:rgba(247,200,67,.65);
+
+  --small:#58a6ff;
+  --small-glow:rgba(88,166,255,.65);
+
+  --bg:#010409;
+  --card:#0d1117;
+  --success:#2ea043;
+  --danger:#f85149;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  font-family:'Segoe UI',sans-serif;
+  background:#000;
+}
+
+/* ===== WEBVIEW ===== */
+#webview{
+  position:fixed;
+  inset:0;
+  z-index:1;
+}
+#webview iframe{
+  width:100%;
+  height:100%;
+  border:none;
+}
+
+/* ===== LAUNCHER ===== */
+#launcher{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:var(--neon-blue);
+  color:#000;
+  font-size:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:1000;
+  box-shadow:0 0 25px var(--neon-blue-glow);
+}
+
+/* ===== FLOAT PANEL ===== */
+#panelWrap{
+  position:fixed;
+  right:20px;
+  bottom:90px;
+  width:420px;
+  max-height:85vh;
+  display:none;
+  z-index:1001;
+}
+
+#panel{
+  background: rgba(13,17,23,0.88);
+  backdrop-filter: blur(18px);
+  border-radius:18px;
+  border:1px solid var(--neon-blue);
+  box-shadow:
+    0 0 0 1px rgba(31,111,235,.3),
+    0 0 25px var(--neon-blue-glow),
+    0 25px 60px rgba(0,0,0,.8);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+#panelHeader{
+  padding:10px;
+  background:rgba(0,0,0,.4);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:.7rem;
+  letter-spacing:2px;
+  cursor:grab;
+  color:#c9d1d9;
+}
+
+.header-btn{
+  background:#21262d;
+  border:1px solid #30363d;
+  color:#c9d1d9;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:.65rem;
+  cursor:pointer;
+}
+
+#panelBody{
+  padding:12px;
+  overflow:auto;
+  color:#c9d1d9;
+}
+
+/* ===== HERO (MAIN PANEL WHITE GLASS) ===== */
+.hero{
+  position:relative;
+  text-align:center;
+  padding:20px;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.08);
+  margin-bottom:12px;
+  background: rgba(255,255,255,0.22); /* WHITE GLASS */
+  backdrop-filter: blur(18px);
+}
+
+.hero-val{
+  font-size:4rem;
+  font-weight:900;
+}
+
+.hero-val.BIG{
+  color:var(--big);
+  text-shadow:0 0 12px var(--big-glow);
+}
+
+.hero-val.SMALL{
+  color:var(--small);
+  text-shadow:0 0 12px var(--small-glow);
+}
+
+.audio-ctrl{
+  position:absolute;
+  top:10px;
+  left:10px;
+  background:#f1f5f9;
+  border:1px solid rgba(0,0,0,.15);
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:.65rem;
+  cursor:pointer;
+  color:#0b1220;
+}
+
+.timer{
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:1.6rem;
+  font-weight:800;
+  color:var(--neon-blue);
+}
+
+.timer.warn{
+  color:var(--danger);
+  animation:pulse .5s infinite;
+}
+
+@keyframes pulse{
+  0%{opacity:1}
+  50%{opacity:.4}
+  100%{opacity:1}
+}
+
+.progress{
+  height:4px;
+  background:#e2e8f0;
+  margin-top:12px;
+}
+.bar{
+  height:100%;
+  width:0%;
+  background:var(--neon-blue);
+}
+
+/* ===== DASH (KEEP DARK) ===== */
+.dashboard{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+.card{
+  background:rgba(22,27,34,0.9);
+  border:1px solid #30363d;
+  border-radius:10px;
+  padding:10px;
+  text-align:center;
+}
+.val{
+  font-size:2rem;
+  font-weight:800;
+}
+.win{color:var(--success)}
+.loss{color:var(--danger)}
+
+/* ===== RESULT ===== */
+.result{
+  display:none;
+  padding:8px;
+  border-radius:8px;
+  margin-bottom:10px;
+  text-align:center;
+  font-weight:700;
+}
+.win-banner{
+  background:rgba(247,200,67,.15);
+  border:1px solid var(--big);
+  box-shadow:0 0 15px var(--big-glow);
+  color:var(--big);
+}
+.loss-banner{
+  background:rgba(88,166,255,.15);
+  border:1px solid var(--small);
+  box-shadow:0 0 15px var(--small-glow);
+  color:var(--small);
+}
+
+/* ===== TREND ===== */
+.trend{
+  display:flex;
+  gap:5px;
+  justify-content:center;
+  margin-bottom:10px;
+}
+.dot{
+  width:26px;
+  height:26px;
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  color:#000;
+}
+.dot.S{
+  background:var(--small);
+  box-shadow:0 0 12px var(--small-glow);
+}
+.dot.B{
+  background:var(--big);
+  box-shadow:0 0 12px var(--big-glow);
+}
+
+/* ===== TABLE (History text white) ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.7rem;
+  color:#fff; /* WHITE TEXT */
+}
+th,td{
+  padding:6px;
+  border-bottom:1px solid rgba(0,0,0,.08);
+}
+.badge{
+  padding:3px 6px;
+  border-radius:4px;
+  font-weight:700;
+}
+.b-s{background:var(--small)}
+.b-b{background:var(--big)}
+</style>
+</head>
+
+<body>
+
+<div id="webview">
+  <iframe src="https://www.cklottery.online/#/register?invitationCode=86224751753"></iframe>
+</div>
+
+<div id="launcher">⚡</div>
+
+<div id="panelWrap">
+<div id="panel">
+<div id="panelHeader">
+TURBO ENGINE
+<button class="header-btn" id="closePanel">CLOSE</button>
+</div>
+
+<div id="panelBody">
+
+<div class="hero">
+<div id="audioToggle" class="audio-ctrl">🔊 SOUND ON</div>
+<div id="countdown" class="timer">30</div>
+<div style="font-size:.65rem;color:#0b1220">CURRENT</div>
+<div id="mainPred" class="hero-val">--</div>
+<div class="progress"><div id="progressBar" class="bar"></div></div>
+</div>
+
+<div class="dashboard">
+<div class="card"><div id="winStreakVal" class="val win">0</div>WIN</div>
+<div class="card"><div id="lossStreakVal" class="val loss">0</div>LOSS</div>
+</div>
+
+<div id="resBanner" class="result"></div>
+<div id="trendMap" class="trend"></div>
+
+<table>
+<thead>
+<tr><th>Issue</th><th>Num</th><th>Result</th><th>Pred</th><th>✔</th></tr>
+</thead>
+<tbody id="logs"></tbody>
+</table>
+
+</div>
+</div>
+</div>
+
+<script>
+let panelOpen=false;
+launcher.onclick=()=>{
+  panelWrap.style.display='block';
+  launcher.style.display='none';
+  panelOpen=true;
+};
+closePanel.onclick=()=>{
+  panelWrap.style.display='none';
+  launcher.style.display='flex';
+  panelOpen=false;
+  ding.pause();ding.currentTime=0;
+};
+
+/* Drag */
+(()=>{
+let drag=false,dx,dy;
+panelHeader.onmousedown=e=>{
+drag=true;
+dx=e.clientX-panelWrap.offsetLeft;
+dy=e.clientY-panelWrap.offsetTop;
+document.onmousemove=m=>{
+if(!drag)return;
+panelWrap.style.left=m.clientX-dx+'px';
+panelWrap.style.top=m.clientY-dy+'px';
+panelWrap.style.right='auto';
+panelWrap.style.bottom='auto';
+};
+document.onmouseup=()=>drag=false;
+};
+})();
+</script>
+
+<script>
+const API_URL="https://ckygjf6r.com/api/webapi/GetNoaverageEmerdList";
+const CONFIGS={
+  1:{random:"137f36878d8944578eb6356e2657a685",signature:"B86AA859491AB81504B290EF7CE5BC6D"},
+  2:{random:"5ac0841f4f854e009a9e8882c68ffe85",signature:"73C607EFA7343B7C8596F6B274DD6D13"},
+  3:{random:"c548a501e994412abc105d4114a511f6",signature:"B732E8ADE4008EE30A957507FDB600D6"},
+  4:{random:"6c2456baf65543d4a46d6e2c61abb3b4",signature:"C491848A4747BEF5BD7C34F398848EC8"},
+  5:{random:"26deefe6a6b24617a09dbd8c46679b85",signature:"41C952D67AE76378DD6F846D01BCBAA4"},
+  6:{random:"0e7c33aa47724842b23578bc25a6d412",signature:"17EEBF5DB9F580AA3570E228984ABEA6"},
+  7:{random:"2dded197e97843fc935c5e1614058d5b",signature:"A650A431FE88777B70CA8B17CA9CD45E"},
+  8:{random:"178fc676c4dc41fb995b26c3940ba807",signature:"6D5C9C5FBDED171C783588617FD372F3"},
+  9:{random:"b6f5580c32f64d998ea48059c59993b3",signature:"83B5EBB6A1D42F37B5FDECF130E7801C"},
+  10:{random:"1d0e1767c46e4015b554458d3d73e660",signature:"2DAC62009BE13EC9D97BEB0E24ACD9E8"},
+  11:{random:"197fc6f63454454db7972f2cc57a2463",signature:"86469E2BD1F60AB1B7315C937F2E3F6C"}
+};
+
+let cachedData={},lastIssue="",sync=0,soundEnabled=true;
+const ding=new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+
+audioToggle.onclick=()=>{
+  soundEnabled=!soundEnabled;
+  audioToggle.innerText=soundEnabled?"🔊 SOUND ON":"🔇 SOUND OFF";
+};
+
+function calculateBS(nums){
+  let sum=nums.reduce((a,b)=>a+ +b,0);
+  if(sum>9)sum=(""+sum).split("").reduce((a,b)=>+a+ +b,0);
+  return sum<=4?"SMALL":"BIG";
+}
+
+async function updateSystem(){
+  try{
+    const t=Math.floor(Date.now()/1000);
+    const pages=[...Array(11)].map((_,i)=>i+1);
+
+    await Promise.all(pages.map(async p=>{
+      const body={
+        pageSize:10,
+        pageNo:p,
+        typeId:30,
+        language:0,
+        random:CONFIGS[p].random,
+        signature:CONFIGS[p].signature,
+        timestamp:t
+      };
+      const r=await fetch(API_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+      const j=await r.json();
+      if(j.data)cachedData[p]=j.data.list;
+    }));
+
+    const top=cachedData[1][0].issueNumber;
+    if(top!==lastIssue && lastIssue)handleOutcome();
+    lastIssue=top;
+
+    calculateGlobalStreaks();
+    render();
+  }catch{}
+}
+
+function handleOutcome(){
+  const last=cachedData[1][0];
+  const src=cachedData[1].slice(1,4).map(x=>x.number);
+  const act=+last.number<=4?"SMALL":"BIG";
+  const pre=calculateBS(src);
+
+  resBanner.style.display='block';
+  resBanner.className='result '+(act===pre?'win-banner':'loss-banner');
+  resBanner.innerText=`LAST: ${act===pre?'WIN':'LOSS'} (${act})`;
+}
+
+function calculateGlobalStreaks(){
+  let all=[];
+  for(let i=1;i<=11;i++){
+    if(cachedData[i]) all=all.concat(cachedData[i]);
+  }
+
+  let maxW=0,maxL=0,curW=0,curL=0;
+  for(let i=0;i<all.length-3;i++){
+    const act=+all[i].number<=4?"SMALL":"BIG";
+    const pre=calculateBS(all.slice(i+1,i+4).map(x=>x.number));
+    if(act===pre){
+      curW++; curL=0;
+      if(curW>maxW) maxW=curW;
+    }else{
+      curL++; curW=0;
+      if(curL>maxL) maxL=curL;
+    }
+  }
+
+  winStreakVal.innerText=maxW;
+  lossStreakVal.innerText=maxL;
+}
+
+function render(){
+  const list=cachedData[1]||[];
+  if(list.length>=3){
+    const p=calculateBS(list.slice(0,3).map(x=>x.number));
+    mainPred.innerText=p;
+    mainPred.className='hero-val '+p;
+  }
+
+  logs.innerHTML="";
+  trendMap.innerHTML="";
+
+  list.slice(0,10).reverse().forEach(i=>{
+    const b=+i.number<=4?'S':'B';
+    trendMap.innerHTML+=`<div class="dot ${b}">${b}</div>`;
+  });
+
+  list.forEach((o,i)=>{
+    const act=+o.number<=4?"SMALL":"BIG";
+    const pre=calculateBS((list.slice(i+1,i+4)||[]).map(x=>x.number));
+    logs.innerHTML+=`
+      <tr>
+        <td>${o.issueNumber.slice(-4)}</td>
+        <td>${o.number}</td>
+        <td><span class="badge ${act==='SMALL'?'b-s':'b-b'}">${act}</span></td>
+        <td>${pre}</td>
+        <td>${act===pre?'✅':'❌'}</td>
+      </tr>`;
+  });
+}
+
+function clock(){
+  let s=new Date().getSeconds();
+  let left = (s < 21) ? (21 - s) : (51 - s);
+  if (left < 0) left += 30;
+
+  countdown.innerText = left.toString().padStart(2,'0');
+  progressBar.style.width = ((30 - left) / 30 * 100) + "%";
+
+  if (left <= 5){
+    countdown.classList.add('warn');
+    if(panelOpen && soundEnabled){
+      ding.currentTime = 0;
+      ding.play().catch(()=>{});
+    }
+  } else {
+    countdown.classList.remove('warn');
+  }
+
+  if(++sync >= 5){
+    sync = 0;
+    updateSystem();
+  }
+}
+
+setInterval(clock,1000);
+updateSystem();
+clock();
+</script>
+
+</body>
+</html>
